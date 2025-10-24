@@ -88,7 +88,10 @@ export default function IRSForms() {
     
     try {
       const token = csrfToken || getCsrfTokenFromCookie();
-      const endpoint = `${BACKEND_URL}/api/irs-forms/generate_${formType.replace('-', '_')}/`;
+      // Normalize form type: remove hyphens for API endpoint (1099-nec -> 1099nec)
+      const normalizedFormType = formType.replace(/-/g, '');
+      const endpoint = `${BACKEND_URL}/api/irs-forms-api/generate-${normalizedFormType}/`;
+      console.log('Endpoint:', endpoint);
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -99,7 +102,7 @@ export default function IRSForms() {
         body: JSON.stringify({
           company_id: selectedCompany, // Use selected company (UUID)
           tax_year: parseInt(taxYear),
-          recipient_data: formType === '1099-nec' ? {
+          recipient_data: (formType === '1099-nec' || formType === '1099nec') ? {
             name: 'John Doe',
             tin: '123-45-6789',
             address: '123 Main St, City, State 12345',
@@ -118,9 +121,22 @@ export default function IRSForms() {
       });
 
       if (response.ok) {
-        await fetchForms();
+        // Download PDF
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Form_${formType}_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        toast.success(`Form ${formType} generated successfully!`);
       } else {
-        console.error('Failed to generate form');
+        const errorData = await response.json();
+        toast.error(`Failed to generate form: ${errorData.error || 'Unknown error'}`);
+        console.error('Failed to generate form:', errorData);
       }
     } catch (error) {
       console.error('Error generating form:', error);
