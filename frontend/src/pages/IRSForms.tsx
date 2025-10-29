@@ -11,7 +11,7 @@ import { InfoTooltip } from "@/components/InfoTooltip";
 import { IRS_FORM_TOOLTIPS } from "@/lib/tooltips";
 import { AIFormAnalysis } from "@/components/AIFormAnalysis";
 
-const BACKEND_URL = "https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer";
+import { BACKEND_URL } from "@/config/api";;
 
 interface IRSForm {
   id: number;

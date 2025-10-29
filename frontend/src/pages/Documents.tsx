@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 import { Upload, FileText, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 
-const BACKEND_URL = "https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer";
+import { BACKEND_URL } from "@/config/api";;
 
 interface Document {
   id: string;

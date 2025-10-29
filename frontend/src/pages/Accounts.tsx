@@ -12,7 +12,7 @@ import { InfoTooltip } from "@/components/InfoTooltip";
 import { ACCOUNT_TYPE_TOOLTIPS, ACCOUNT_CODE_TOOLTIP, DOUBLE_ENTRY_TOOLTIP } from "@/lib/tooltips";
 import { AIChartAnalysis } from "@/components/AIChartAnalysis";
 
-const BACKEND_URL = "https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer";
+import { BACKEND_URL } from "@/config/api";;
 
 interface Account {
   id: string;

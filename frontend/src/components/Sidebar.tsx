@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 
-const BACKEND_URL = "http://localhost:8000";
+import { BACKEND_URL } from "@/config/api";
 
 interface NavItem {
   path: string;

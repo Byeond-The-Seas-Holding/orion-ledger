@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react";
 import { FileDown, Loader2, DollarSign } from "lucide-react";
 
-const BACKEND_URL = "https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer";
+import { BACKEND_URL } from "@/config/api";;
 
 interface BalanceSheetData {
   date: string;

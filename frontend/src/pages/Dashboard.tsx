@@ -4,7 +4,7 @@ import { APP_TITLE } from "@/const";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
-const BACKEND_URL = "https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer";
+import { BACKEND_URL } from "@/config/api";;
 
 interface User {
   id: number;
