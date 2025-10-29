@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import { Sparkles, FileText, AlertTriangle, CheckCircle2, Info, Download } from 'lucide-react';
+import { BACKEND_URL } from '@/config/api';
 
 interface FormField {
   field_name: string;
@@ -51,7 +52,6 @@ export function AIFormAnalysis({ companyId, formType, formTitle, formDescription
     setError(null);
     
     try {
-      const BACKEND_URL = 'https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer';
       const response = await fetch(
         `${BACKEND_URL}/api/ai-forms/analyze-${formType}/`,
         {
@@ -236,7 +236,6 @@ export function AIFormAnalysis({ companyId, formType, formTitle, formDescription
               {pdfPath ? (
                 <Button
                   onClick={() => {
-                    const BACKEND_URL = 'https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer';
                     window.open(`${BACKEND_URL}/api/ai-forms/download-pdf/?path=${encodeURIComponent(pdfPath)}`, '_blank');
                   }}
                   className="bg-green-600 hover:bg-green-700"

@@ -254,14 +254,37 @@ export default function IRSForms() {
           </CardContent>
         </Card>
 
-        {/* AI Form Analysis */}
+        {/* AI Form Analysis - All Forms */}
         {selectedCompany && (
-          <AIFormAnalysis
-            companyId={selectedCompany}
-            formType="1120"
-            formTitle="Form 1120"
-            formDescription="U.S. Corporation Income Tax Return - AI-powered analysis and generation"
-          />
+          <div className="space-y-6">
+            <AIFormAnalysis
+              companyId={selectedCompany}
+              formType="5472"
+              formTitle="Form 5472"
+              formDescription="Information Return of a 25% Foreign-Owned U.S. Corporation - AI-powered analysis"
+            />
+            
+            <AIFormAnalysis
+              companyId={selectedCompany}
+              formType="1099nec"
+              formTitle="Form 1099-NEC"
+              formDescription="Nonemployee Compensation - AI-powered analysis and generation"
+            />
+            
+            <AIFormAnalysis
+              companyId={selectedCompany}
+              formType="1120"
+              formTitle="Form 1120"
+              formDescription="U.S. Corporation Income Tax Return - AI-powered analysis and generation"
+            />
+            
+            <AIFormAnalysis
+              companyId={selectedCompany}
+              formType="1040"
+              formTitle="Form 1040"
+              formDescription="U.S. Individual Income Tax Return - AI-powered analysis and generation"
+            />
+          </div>
         )}
 
         {/* Quick Actions */}
