@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+import { BACKEND_URL } from '@/config/api';
+import { getCsrfTokenFromCookie } from '@/hooks/useCsrfToken';
 
 interface Transaction {
   date: string;
@@ -24,8 +24,8 @@ interface Account {
 interface Props {
   document: any;
   onClose: () => void;
-  onImportComplete: () => void;
-  csrfToken: string;
+  onImportComplete?: () => void;
+  csrfToken?: string;
 }
 
 export function TransactionReviewModal({ document, onClose, onImportComplete, csrfToken }: Props) {
@@ -114,11 +114,12 @@ export function TransactionReviewModal({ document, onClose, onImportComplete, cs
 
       for (const trans of selected) {
         try {
+          const token = csrfToken || getCsrfTokenFromCookie();
           const response = await fetch(`${BACKEND_URL}/api/transactions/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRFToken': csrfToken,
+              'X-CSRFToken': token,
             },
             credentials: 'include',
             body: JSON.stringify({
@@ -148,7 +149,9 @@ export function TransactionReviewModal({ document, onClose, onImportComplete, cs
 
       if (successCount > 0) {
         toast.success(`Successfully imported ${successCount} transaction(s)!`);
-        onImportComplete();
+        if (onImportComplete) {
+          onImportComplete();
+        }
         onClose();
       }
 
@@ -257,7 +260,9 @@ export function TransactionReviewModal({ document, onClose, onImportComplete, cs
                       step="0.01"
                       value={Math.abs(trans.amount)}
                       onChange={(e) => {
-                        const newAmount = parseFloat(e.target.value) * (trans.amount < 0 ? -1 : 1);
+                        const parsed = parseFloat(e.target.value);
+                        if (isNaN(parsed)) return;
+                        const newAmount = parsed * (trans.amount < 0 ? -1 : 1);
                         handleUpdateTransaction(idx, 'amount', newAmount);
                       }}
                       className={`border rounded px-2 py-1 text-sm w-24 text-right font-medium ${
@@ -316,14 +321,8 @@ export function TransactionReviewModal({ document, onClose, onImportComplete, cs
             <Button variant="outline" onClick={onClose} disabled={importing}>
               Cancel
             </Button>
-            <Button 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                alert('Import button clicked!');
-                console.log('Import button clicked!');
-                handleImport();
-              }} 
+            <Button
+              onClick={handleImport}
               disabled={importing || selectedCount === 0}
             >
               {importing ? 'Importing...' : `Import ${selectedCount} Transaction(s)`}

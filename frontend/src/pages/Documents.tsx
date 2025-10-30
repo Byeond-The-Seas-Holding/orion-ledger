@@ -3,8 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 import { Upload, FileText, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
+import { toast } from 'sonner';
 
-import { BACKEND_URL } from "@/config/api";;
+import { BACKEND_URL } from "@/config/api";
+import { getCsrfTokenFromCookie } from "@/hooks/useCsrfToken";
 
 interface Document {
   id: string;
@@ -52,7 +54,8 @@ export default function Documents() {
 
       if (response.ok) {
         const data = await response.json();
-        setDocuments(data);
+        const docList = data.results || data || [];
+        setDocuments(docList);
       }
     } catch (error) {
       console.error('Failed to fetch documents:', error);
@@ -89,7 +92,7 @@ export default function Documents() {
 
   const handleFiles = async (files: FileList) => {
     if (!selectedCompany) {
-      alert('Please select a company first');
+      toast.error('Please select a company first');
       return;
     }
 
@@ -97,17 +100,17 @@ export default function Documents() {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      
+
       // Validate file type
       const allowedTypes = ['application/pdf', 'text/csv', 'image/jpeg', 'image/png', 'image/jpg'];
       if (!allowedTypes.includes(file.type)) {
-        alert(`File type not supported: ${file.name}`);
+        toast.error(`File type not supported: ${file.name}`);
         continue;
       }
 
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        alert(`File too large: ${file.name} (max 10MB)`);
+        toast.error(`File too large: ${file.name} (max 10MB)`);
         continue;
       }
 
@@ -124,8 +127,12 @@ export default function Documents() {
     formData.append('company', selectedCompany);
 
     try {
+      const token = getCsrfTokenFromCookie();
       const response = await fetch(`${BACKEND_URL}/api/documents/upload/`, {
         method: 'POST',
+        headers: {
+          'X-CSRFToken': token,
+        },
         credentials: 'include',
         body: formData,
       });
@@ -134,9 +141,10 @@ export default function Documents() {
         const error = await response.json();
         throw new Error(error.error || 'Upload failed');
       }
+      toast.success(`${file.name} uploaded successfully!`);
     } catch (error) {
       console.error('Upload error:', error);
-      alert(`Failed to upload ${file.name}`);
+      toast.error(`Failed to upload ${file.name}`);
     }
   };
 

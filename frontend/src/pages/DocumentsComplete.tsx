@@ -6,11 +6,20 @@ import { toast } from 'sonner';
 import { TransactionReviewModal } from '@/components/TransactionReviewModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useCsrfToken, getCsrfTokenFromCookie } from '@/hooks/useCsrfToken';
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { DOCUMENT_UPLOAD_TOOLTIPS } from "@/lib/tooltips";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer";
+import { BACKEND_URL } from '@/config/api';
 
 interface Document {
   id: string;
@@ -46,6 +55,8 @@ export default function DocumentsComplete() {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<{id: string, name: string} | null>(null);
 
   useEffect(() => {
     console.log('[DEBUG] Component mounted, fetching data...');
@@ -137,7 +148,7 @@ export default function DocumentsComplete() {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       await handleFiles(e.dataTransfer.files);
     }
-  }, [selectedCompany]);
+  }, [selectedCompany, csrfToken]);
 
   const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -224,12 +235,21 @@ export default function DocumentsComplete() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+  const confirmDelete = (id: string, name: string) => {
+    setDocumentToDelete({ id, name });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!documentToDelete) return;
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/documents/${id}/`, {
+      const token = csrfToken || getCsrfTokenFromCookie();
+      const response = await fetch(`${BACKEND_URL}/api/documents/${documentToDelete.id}/`, {
         method: 'DELETE',
+        headers: {
+          'X-CSRFToken': token,
+        },
         credentials: 'include',
       });
 
@@ -243,6 +263,9 @@ export default function DocumentsComplete() {
       console.error('Delete error:', error);
       toast.error('Failed to delete document');
     }
+
+    setDeleteDialogOpen(false);
+    setDocumentToDelete(null);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -390,13 +413,15 @@ export default function DocumentsComplete() {
                       </div>
                       <div className="flex gap-2">
                         {/* View Document Button */}
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => {
-                            // Extract relative path after /media/
-                            const relativePath = doc.file_path.split('/media/')[1] || doc.file_path;
-                            window.open(`${BACKEND_URL}/media/${relativePath}`, '_blank');
+                            // Handle both absolute and relative paths
+                            const filePath = doc.file_path.startsWith('/')
+                              ? `${BACKEND_URL}${doc.file_path}`
+                              : `${BACKEND_URL}/${doc.file_path}`;
+                            window.open(filePath, '_blank');
                           }}
                         >
                           View Document
@@ -433,10 +458,10 @@ export default function DocumentsComplete() {
                         )}
                         
                         {/* Delete Button */}
-                        <Button 
-                          size="sm" 
-                          variant="destructive" 
-                          onClick={() => handleDelete(doc.id, doc.file_name)}
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => confirmDelete(doc.id, doc.file_name)}
                         >
                           Delete
                         </Button>
@@ -449,6 +474,24 @@ export default function DocumentsComplete() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{documentToDelete?.name}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Transaction Review Modal */}
       {selectedDocument && (

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-
-const BACKEND_URL = "https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer";
+import { BACKEND_URL } from '@/config/api';
 
 export function useCsrfToken() {
   const [csrfToken, setCsrfToken] = useState<string>('');
