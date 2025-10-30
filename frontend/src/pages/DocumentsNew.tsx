@@ -17,12 +17,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 import { TransactionReviewModal } from '@/components/TransactionReviewModal';
-import { useCsrfToken } from '@/hooks/useCsrfToken';
+import { useCsrfToken, getCsrfTokenFromCookie } from '@/hooks/useCsrfToken';
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { DOCUMENT_UPLOAD_TOOLTIPS } from "@/lib/tooltips";
 import { Search, FileText, Upload, ChevronLeft, ChevronRight } from "lucide-react";
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://8000-iawczpd16uqen9op7vv32-370d3fde.manusvm.computer";
+import { BACKEND_URL } from '@/config/api';
 
 interface Document {
   id: string;
@@ -165,13 +164,31 @@ export default function DocumentsNew() {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+
+      // Validate file type
+      const validTypes = ['application/pdf', 'text/csv', 'image/png', 'image/jpeg', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        toast.error(`Invalid file type: ${file.name}. Only PDF, CSV, and images are allowed.`);
+        continue;
+      }
+
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`File too large: ${file.name}. Maximum size is 10MB.`);
+        continue;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('company', selectedCompany);
 
       try {
+        const token = csrfToken || getCsrfTokenFromCookie();
         const response = await fetch(`${BACKEND_URL}/api/documents/upload/`, {
           method: 'POST',
+          headers: {
+            'X-CSRFToken': token,
+          },
           body: formData,
           credentials: 'include',
         });
@@ -214,8 +231,12 @@ export default function DocumentsNew() {
 
   const handleRetry = async (id: string) => {
     try {
+      const token = csrfToken || getCsrfTokenFromCookie();
       const response = await fetch(`${BACKEND_URL}/api/documents/${id}/reprocess/`, {
         method: 'POST',
+        headers: {
+          'X-CSRFToken': token,
+        },
         credentials: 'include',
       });
 
@@ -240,8 +261,12 @@ export default function DocumentsNew() {
     if (!documentToDelete) return;
 
     try {
+      const token = csrfToken || getCsrfTokenFromCookie();
       const response = await fetch(`${BACKEND_URL}/api/documents/${documentToDelete.id}/`, {
         method: 'DELETE',
+        headers: {
+          'X-CSRFToken': token,
+        },
         credentials: 'include',
       });
 
@@ -485,7 +510,13 @@ export default function DocumentsNew() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.open(`${BACKEND_URL}${doc.file_path}`, '_blank')}
+                          onClick={() => {
+                            // Handle both absolute and relative paths
+                            const filePath = doc.file_path.startsWith('/')
+                              ? `${BACKEND_URL}${doc.file_path}`
+                              : `${BACKEND_URL}/${doc.file_path}`;
+                            window.open(filePath, '_blank');
+                          }}
                         >
                           View Document
                         </Button>
@@ -595,10 +626,11 @@ export default function DocumentsNew() {
         <TransactionReviewModal
           document={selectedDocument}
           onClose={() => setSelectedDocument(null)}
-          onImport={() => {
+          onImportComplete={() => {
             setSelectedDocument(null);
             fetchDocuments();
           }}
+          csrfToken={csrfToken}
         />
       )}
     </div>
